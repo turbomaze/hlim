@@ -6,14 +6,18 @@ var defaultWidth = 40
 
 /*********************
  * working variables */
+var colorArray;
 
 /******************
  * work functions */
 function init() {
+	//initialize working variables
+	colorArray
+
 	//generate the stylesheet for the images
 	var css = document.createElement('style');
 	for (var ai = 0; ai < numColors; ai++) {
-		var color = getRandCSSColor();
+		var color = getRandCSSColor(80, 256);
 		var rule = '.'+classPrefix+ai+'::selection {' + 
 			'background: '+color+';' + 
 		'}';
@@ -32,18 +36,32 @@ function init() {
 }
 
 function textToHighlightImage(str, width) {
+	str = str.trim();
+	//str = str.replace(/\s+/g, '~'); //turns string into one big long one
+	str = str.replace(/\s+/g, ' '); //turns string into one big long one
+	//str = str.replace(/\s/g, '~'); //turns string into one big long one
+	//str = str.replace(/~+/g, '~'); //turns string into one big long one
+
 	var ret = '';
-	var ctr = 0;
+	var row = 0;
+	var col = 0;
 	for (var ai = 0; ai < str.length; ai++) { //for each char in each line
-		ctr += 1;
-		var currChar = str.charAt(ai);
-		var colorId = getRandNum(0, numColors);
+		var currChar = str.charAt(ai); 
+		if (/\s/.test(currChar) && col == 0) { //if whitespace is starting the line, ignore it
+			continue;
+		}
+		var colorId = getRandNum(0, numColors); //set its color to one of the randomly generated ones
 		var charClassName = classPrefix + colorId;
 
 		ret += '<span class="'+charClassName+'">';
 		ret += currChar;
 		ret += '</span>';
-		if (ctr%width == 0) ret += "<br />";
+		col += 1; col = col%width;
+
+		if (col == 0) { //if it just got rolled back to 0, it means it's a new line
+			ret += "<br />";
+			row += 1;
+		}
 	}
 
 	return ret;
@@ -51,8 +69,10 @@ function textToHighlightImage(str, width) {
 
 /********************
  * helper functions */
-function getRandCSSColor() {
-	return 'rgb('+getRandNum(0, 256)+','+getRandNum(0, 256)+','+getRandNum(0, 256)+')';
+function getRandCSSColor(low, high) {
+	low = low || 0;
+	high = high || 256;
+	return 'rgb('+getRandNum(low, high)+','+getRandNum(low, high)+','+getRandNum(low, high)+')';
 }
 
 function $(id) {
