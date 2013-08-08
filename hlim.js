@@ -9,13 +9,10 @@
 var classPrefix = 'hlim-color-';
 var defaultWidth = 30;
 var charHeightToWidthRatio = 2;
-var alphabetForIds = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 /*********************
  * working variables */
 var allImagePixels;
-var hlimElementIds;
-var hlimCorrespIdxs;
 var uniqueColors;
 var colorArray;
 
@@ -25,8 +22,6 @@ function init() {
 	////////////////////////////////
 	//initialize working variables//
 	allImagePixels = [];
-	hlimElementIds = [];
-	hlimCorrespIdxs = [];
 	uniqueColors = [];
 	colorArray = [];
 
@@ -37,24 +32,29 @@ function init() {
 	// 3. add all those color rules to the css document, and add all those class associations to the colorArray                        //
 	// 4. go through all the hlim-enabled elements, setting the color of each char to the color of the corresponding pixel in the data //
 	//    *figure out which index in the data corresponds to which hlim element                                                        //
-	loadDataForAllImages(function() {
-		uniquifyColors(function() {
-			generateCSSForColors(function() {
-				turnHlimElementsToImages();
+	loadDataForAllImages(function() {			//1
+		uniquifyColors(function() {				//2
+			generateCSSForColors(function() {	//3
+				turnHlimElementsIntoImages();	//4
 			});
 		});
 	});
 }
 
-function turnHlimElementsToImages() {
+function turnHlimElementsIntoImages() {
 	var elements = document.querySelectorAll('[data-hlim-src]');
 	for (var ai = 0; ai < elements.length; ai++) {
-		var text = elements[ai]
-var textHlimId = text.getAttribute('data-hlim-id');
+		var text = elements[ai];
 		var textImgSrc = text.getAttribute('data-hlim-src');
 		var charsPerLine = text.getAttribute('data-hlim-width') || defaultWidth;
 		text.style.fontFamily = "monospace";
-		text.innerHTML = textToHighlightImage(0, text.innerHTML, charsPerLine);
+
+		getPixelsFromImage(textImgSrc, charsPerLine, (function(text_, charsPerLine_) {
+			return function(data) {
+				text_.innerHTML = textToHighlightImage(data, text_.innerHTML, charsPerLine_);
+
+			};
+		})(text, charsPerLine));
 	}
 }
 
@@ -76,17 +76,6 @@ function generateCSSForColors(callback) {
 
 function uniquifyColors(callback) {
 	uniqueColors = []; //rgb
-	/*for (var ai = 0; ai < allImagePixels.length; ai++) {
-		for (var bi = 0; bi < allImagePixels[ai].length; bi+=4) {
-			var red = allImagePixels[ai][bi+0];
-			var green = allImagePixels[ai][bi+1];
-			var blue = allImagePixels[ai][bi+2];
-			var color = 'rgb('+red+','+green+','+blue+')';
-			if (uniqueColors.indexOf(color) == -1) {
-				uniqueColors.push(color);
-			}
-		}
-	}*/
 	for (var key in allImagePixels) {
 		for (var bi = 0; bi < allImagePixels[key].length; bi+=4) {
 			var red = allImagePixels[key][bi+0];
@@ -117,8 +106,7 @@ function loadDataForAllImages(callback) {
 	}
 }
 
-function textToHighlightImage(idxInPixelArray, str, width) {
-	alert(idxInPixelArray);
+function textToHighlightImage(pixels, str, width) {
 	str = str.trim().replace(/\s+/g, ' '); //turns string into one big long one
 
 	var ret = '';
@@ -127,16 +115,16 @@ function textToHighlightImage(idxInPixelArray, str, width) {
 	var col = 0; //and columns
 	
 	for (var ai = 0; ai < str.length; ai++) { //for each char in each line
-		var currChar = str.charAt(ai);  //get the character and check
+		var currChar = htmlEscape(str.charAt(ai));  //get the character, escape it, and check
 		if (/\s/.test(currChar) && col == 0) { //if whitespace is starting the line,
 			continue; //because then it shouldn't be counted
 		}
 
 		if (!finishedDrawing) { //if you haven't drawn all the pixels yet
 			var baseIdx = 4*(width*charHeightToWidthRatio*row + col); //get the current character's color
-			var red = allImagePixels[idxInPixelArray][baseIdx+0]; //" "
-			var green = allImagePixels[idxInPixelArray][baseIdx+1]; //" "
-			var blue = allImagePixels[idxInPixelArray][baseIdx+2]; //" "
+			var red = pixels[baseIdx+0]; //" "
+			var green = pixels[baseIdx+1]; //" "
+			var blue = pixels[baseIdx+2]; //" "
 			var color = 'rgb('+red+','+green+','+blue+')'; //" "
 			var colorId = colorArray[color]; //and find out what the css id of the color is
 			if (colorId == undefined) finishedDrawing = true; //if it has none, it means you're finished drawing
@@ -188,17 +176,13 @@ function getRandCSSColor(low, high) { //returns random color in css rgb format, 
 	return 'rgb('+getRandNum(low, high)+','+getRandNum(low, high)+','+getRandNum(low, high)+')';
 }
 
+function htmlEscape(str) {
+	return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function $(id) { //for convenience
 	if (id.charAt(0) != '#') return false; 
 	return document.getElementById(id.substring(1));
-}
-
-function getRandomString(length, alphabet) {
-	var ret = '';
-	for (var ai = 0; ai < length; ai++) {
-		ret += alphabet.charAt(getRandNum(0, alphabet.length));
-	}
-	return ret;
 }
 
 function getRandNum(lower, upper) { //returns number in [lower, upper)
