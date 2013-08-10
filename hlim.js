@@ -34,27 +34,44 @@ function init() {
 	//    *figure out which index in the data corresponds to which hlim element                                                        //
 	loadDataForAllImages(function() {			//1
 		uniquifyColors(function() {				//2
-			generateCSSForColors(function() {	//3
-				turnHlimElementsIntoImages();	//4
+			generateCSSForColors(function(cssRules) {	//3
+				turnHlimElementsIntoImages(cssRules);	//4
 			});
 		});
 	});
 }
 
-function turnHlimElementsIntoImages() {
+function turnHlimElementsIntoImages(cssRules) {
 	var elements = document.querySelectorAll('[data-hlim-src]');
 	for (var ai = 0; ai < elements.length; ai++) {
 		var text = elements[ai];
 		var textImgSrc = text.getAttribute('data-hlim-src');
 		var charsPerLine = text.getAttribute('data-hlim-width') || defaultWidth;
-		text.style.fontFamily = "monospace";
+		var saveFilePrompt = text.getAttribute('data-hlim-save') == '';
+		text.style.fontFamily = 'monospace';
 
-		getPixelsFromImage(textImgSrc, charsPerLine, (function(text_, charsPerLine_) {
+		getPixelsFromImage(textImgSrc, charsPerLine, (function(text_, charsPerLine_, saveFilePrompt_, cssRules_) {
 			return function(data) {
-				text_.innerHTML = textToHighlightImage(data, text_.innerHTML, charsPerLine_);
+				var openTag = '<' + text_.tagName.toLowerCase();
+				for (var ai = 0; ai < text_.attributes.length; ai++) {
+					var attribute = text_.attributes[ai];
+					if (attribute.specified && attribute.name.indexOf('data-hlim-') != 0) {
+						openTag += ' ' + attribute.name + '="' + attribute.value + '"';
+					}
+				}
+				openTag += '>'
+				var colorSpans = textToHighlightImage(data, text_.innerHTML, charsPerLine_);
+				var closeTag = '</' + text_.tagName.toLowerCase() + '>';
 
+				if (saveFilePrompt_) {
+					text_.innerHTML = getSaveFileLink('Save HTML', openTag+colorSpans+closeTag) + '<br />' + 
+									  getSaveFileLink('Save CSS', cssRules_) + '<br />' + 
+									  colorSpans;
+				} else {
+					text_.innerHTML = colorSpans;
+				}
 			};
-		})(text, charsPerLine));
+		})(text, charsPerLine, saveFilePrompt, cssRules));
 	}
 }
 
@@ -64,6 +81,7 @@ function generateCSSForColors(callback) {
 		var color = uniqueColors[ai];
 		var rule = '.'+classPrefix+ai+'::selection {' + 
 			'background: '+color+';' + 
+			//'color: '+color+';' + 
 		'}';
 		css.innerHTML = css.innerHTML + rule;
 
@@ -71,7 +89,7 @@ function generateCSSForColors(callback) {
 	}
 	document.head.appendChild(css);
 
-	callback();
+	callback(css.innerHTML);
 }
 
 function uniquifyColors(callback) {
@@ -151,6 +169,12 @@ function textToHighlightImage(pixels, str, width) {
 
 /********************
  * helper functions */
+function getSaveFileLink(linkText, fileContents) {
+	return '<a href="data:application/octet-stream;base64;charset=utf-8,' + window.btoa(fileContents) + '">' + 
+				linkText + 
+		   '</a>';
+}
+
 function getPixelsFromImage(location, width, callback) { //returns array of pixel colors in the image
 	var img = new Image(); //make a new image
 	img.onload = function() { //when it is finished loading
