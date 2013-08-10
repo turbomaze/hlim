@@ -15,6 +15,7 @@ var charHeightToWidthRatio = 2;
 var allImagePixels;
 var uniqueColors;
 var colorArray;
+var startingTime;
 
 /******************
  * work functions */
@@ -24,6 +25,7 @@ function init() {
 	allImagePixels = [];
 	uniqueColors = [];
 	colorArray = [];
+	startingTime = new Date().getTime();
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// PROCESS                                                                                                                         //
@@ -32,8 +34,8 @@ function init() {
 	// 3. add all those color rules to the css document, and add all those class associations to the colorArray                        //
 	// 4. go through all the hlim-enabled elements, setting the color of each char to the color of the corresponding pixel in the data //
 	//    *figure out which index in the data corresponds to which hlim element                                                        //
-	loadDataForAllImages(function() {			//1
-		uniquifyColors(function() {				//2
+	loadDataForAllImages(function() {					//1
+		uniquifyColors(function() {						//2
 			generateCSSForColors(function(cssRules) {	//3
 				turnHlimElementsIntoImages(cssRules);	//4
 			});
@@ -42,6 +44,7 @@ function init() {
 }
 
 function turnHlimElementsIntoImages(cssRules) {
+	var timeTakenForCSS = new Date().getTime() - startingTime;
 	var elements = document.querySelectorAll('[data-hlim-src]');
 	for (var ai = 0; ai < elements.length; ai++) {
 		var text = elements[ai];
@@ -51,21 +54,30 @@ function turnHlimElementsIntoImages(cssRules) {
 		text.style.fontFamily = 'monospace';
 
 		getPixelsFromImage(textImgSrc, charsPerLine, (function(text_, charsPerLine_, saveFilePrompt_, cssRules_) {
-			return function(data) {
-				var openTag = '<' + text_.tagName.toLowerCase();
-				for (var ai = 0; ai < text_.attributes.length; ai++) {
-					var attribute = text_.attributes[ai];
-					if (attribute.specified && attribute.name.indexOf('data-hlim-') != 0) {
-						openTag += ' ' + attribute.name + '="' + attribute.value + '"';
-					}
-				}
-				openTag += '>'
+			return function(data, timeTakenToLoadImage) {
+				var htmlStartingTime = new Date().getTime();
 				var colorSpans = textToHighlightImage(data, text_.innerHTML, charsPerLine_);
-				var closeTag = '</' + text_.tagName.toLowerCase() + '>';
 
 				if (saveFilePrompt_) {
+					var hlimTagName = text_.tagName.toLowerCase();
+					var openTag = '<' + hlimTagName;
+					for (var ai = 0; ai < text_.attributes.length; ai++) {
+						var attribute = text_.attributes[ai];
+						if (attribute.specified && attribute.name.indexOf('data-hlim-') != 0) {
+							openTag += ' ' + attribute.name + '="' + attribute.value + '"';
+						}
+					}
+					openTag += '>';
+					var closeTag = '</' + hlimTagName + '>';
+					
 					text_.innerHTML = getSaveFileLink('Save HTML', openTag+colorSpans+closeTag) + '<br />' + 
 									  getSaveFileLink('Save CSS', cssRules_) + '<br />' + 
+									  '<i style="color: red">' + 
+										   'HTML generated in ' + (timeTakenToLoadImage + (new Date().getTime() - htmlStartingTime)) + 'ms' + 
+									  '</i><br />' +
+									  '<i style="color: red">' + 
+										   'CSS generated in ' + timeTakenForCSS + 'ms' + 
+									  '</i><br />' +
 									  colorSpans;
 				} else {
 					text_.innerHTML = colorSpans;
@@ -94,14 +106,14 @@ function generateCSSForColors(callback) {
 
 function uniquifyColors(callback) {
 	uniqueColors = []; //rgb
-	for (var key in allImagePixels) {
-		for (var bi = 0; bi < allImagePixels[key].length; bi+=4) {
-			var red = allImagePixels[key][bi+0];
-			var green = allImagePixels[key][bi+1];
-			var blue = allImagePixels[key][bi+2];
+	for (var ai = 0; ai < allImagePixels.length; ai++) { //for each image's data
+		for (var bi = 0; bi < allImagePixels[ai].length; bi+=4) { //go through its pixels
+			var red = allImagePixels[ai][bi+0];
+			var green = allImagePixels[ai][bi+1];
+			var blue = allImagePixels[ai][bi+2];
 			var color = 'rgb('+red+','+green+','+blue+')';
-			if (uniqueColors.indexOf(color) == -1) {
-				uniqueColors.push(color);
+			if (uniqueColors.indexOf(color) == -1) { //and if it has not been seen yet
+				uniqueColors.push(color); //add it to the array of unique colors
 			}
 		}
 	}
@@ -111,13 +123,13 @@ function uniquifyColors(callback) {
 function loadDataForAllImages(callback) {
 	var elements = document.querySelectorAll('[data-hlim-src]');
 	var numLeftToLoad = elements.length;
-	for (var ai = 0; ai < elements.length; ai++) {
+	for (var ai = 0; ai < elements.length; ai++) { //for every element
 		var text = elements[ai];
 		var textImgSrc = text.getAttribute('data-hlim-src');
 		var textImgWidth = text.getAttribute('data-hlim-width') || defaultWidth;
- 
-		getPixelsFromImage(textImgSrc, textImgWidth, function(data) {
-			allImagePixels.push(data);
+
+		getPixelsFromImage(textImgSrc, textImgWidth, function(data) { //get its image
+			allImagePixels.push(data); //and add its pixels to the pixels array
 			numLeftToLoad -= 1;
 			if (numLeftToLoad == 0) callback();
 		});
@@ -176,6 +188,7 @@ function getSaveFileLink(linkText, fileContents) {
 }
 
 function getPixelsFromImage(location, width, callback) { //returns array of pixel colors in the image
+	var timeStartedGettingPixels = new Date().getTime();
 	var img = new Image(); //make a new image
 	img.onload = function() { //when it is finished loading
 		var canvas = document.createElement('canvas'); //make a canvas element
@@ -188,7 +201,7 @@ function getPixelsFromImage(location, width, callback) { //returns array of pixe
 		var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height); //and grab its pixels
 		document.body.removeChild(canvas); //all done, so get rid of it
 
-		callback(imageData.data); //...all so you can send the pixels back through the callback
+		callback(imageData.data, new Date().getTime() - timeStartedGettingPixels); //...all so you can send the pixels (and the time taken to get them) back through the callback
 	};
 
 	img.src = location; //load the image
