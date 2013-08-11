@@ -8,7 +8,6 @@
  * config */
 var classPrefix = 'hlim-color-';
 var defaultWidth = 30;
-var charHeightToWidthRatio = 2;
 
 /*********************
  * working variables */
@@ -53,7 +52,7 @@ function turnHlimElementsIntoImages(cssRules) {
 		var saveFilePrompt = text.getAttribute('data-hlim-save') == '';
 		text.style.fontFamily = 'monospace';
 
-		getPixelsFromImage(textImgSrc, charsPerLine, (function(text_, charsPerLine_, saveFilePrompt_, cssRules_) {
+		getPixelsFromImage(textImgSrc, charsPerLine, 0.5, (function(text_, charsPerLine_, saveFilePrompt_, cssRules_) {
 			return function(data, timeTakenToLoadImage) {
 				var htmlStartingTime = new Date().getTime();
 				var colorSpans = textToHighlightImage(data, text_.innerHTML, charsPerLine_);
@@ -128,7 +127,7 @@ function loadDataForAllImages(callback) {
 		var textImgSrc = text.getAttribute('data-hlim-src');
 		var textImgWidth = text.getAttribute('data-hlim-width') || defaultWidth;
 
-		getPixelsFromImage(textImgSrc, textImgWidth, function(data) { //get its image
+		getPixelsFromImage(textImgSrc, textImgWidth, 0.5, function(data) { //get its image
 			allImagePixels.push(data); //and add its pixels to the pixels array
 			numLeftToLoad -= 1;
 			if (numLeftToLoad == 0) callback();
@@ -151,7 +150,7 @@ function textToHighlightImage(pixels, str, width) {
 		}
 
 		if (!finishedDrawing) { //if you haven't drawn all the pixels yet
-			var baseIdx = 4*(width*charHeightToWidthRatio*row + col); //get the current character's color
+			var baseIdx = 4*(width*row + col); //get the current character's color
 			var red = pixels[baseIdx+0]; //" "
 			var green = pixels[baseIdx+1]; //" "
 			var blue = pixels[baseIdx+2]; //" "
@@ -187,17 +186,18 @@ function getSaveFileLink(linkText, fileContents) {
 		   '</a>';
 }
 
-function getPixelsFromImage(location, width, callback) { //returns array of pixel colors in the image
+function getPixelsFromImage(location, width, aspectRatioMultiplier, callback) { //returns array of pixel colors in the image
 	var timeStartedGettingPixels = new Date().getTime();
 	var img = new Image(); //make a new image
 	img.onload = function() { //when it is finished loading
+		var aspectRatio = aspectRatioMultiplier*(img.height/img.width);
 		var canvas = document.createElement('canvas'); //make a canvas element
 		canvas.width = width; //with this width
-		canvas.height = width*(img.height/img.width); //and this height (keep it proportional)
+		canvas.height = width*aspectRatio; //and this height (keep it proportional)
 		canvas.style.display = 'none'; //hide it from the user
 		document.body.appendChild(canvas); //then add it to the document's body
 		var ctx = canvas.getContext('2d'); //now get the context
-		ctx.drawImage(img, 0, 0, width, width*(img.height/img.width)); //so that you can draw the image
+		ctx.drawImage(img, 0, 0, width, width*aspectRatio); //so that you can draw the image
 		var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height); //and grab its pixels
 		document.body.removeChild(canvas); //all done, so get rid of it
 
