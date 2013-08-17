@@ -105,8 +105,8 @@ function generateCSSForColors(callback) {
 	for (var ai = 0; ai < uniqueColors.length; ai++) {
 		var color = uniqueColors[ai];
 		var rule = '.'+classPrefix+ai+'::selection {' + 
-			'background: '+color+';' + 
-			((colorText) ? 'color: '+color+';' : '') + 
+			'background: rgba('+color+',0.995);' + 
+			((colorText) ? 'color: rgb('+color+');' : '') + 
 		'}';
 		css.innerHTML = css.innerHTML + rule;
 
@@ -124,7 +124,7 @@ function uniquifyColors(callback) {
 			var red = allImagePixels[ai][bi+0];
 			var green = allImagePixels[ai][bi+1];
 			var blue = allImagePixels[ai][bi+2];
-			var color = 'rgb('+red+','+green+','+blue+')';
+			var color = red+','+green+','+blue;
 			if (uniqueColors.indexOf(color) == -1) { //and if it has not been seen yet
 				uniqueColors.push(color); //add it to the array of unique colors
 			}
@@ -177,7 +177,8 @@ function textToHighlightImage(pixels, str, width) {
 			var red = pixels[baseIdx+0]; //" "
 			var green = pixels[baseIdx+1]; //" "
 			var blue = pixels[baseIdx+2]; //" "
-			var color = 'rgb('+red+','+green+','+blue+')'; //" "
+			//var color = red+','+green+','+blue; //" "
+			var color = red+','+green+','+blue; //" "
 			var colorId = colorArray[color]; //and find out what the css id of the color is
 			if (colorId == undefined) finishedDrawing = true; //if it has none, it means you're finished drawing
 			var charClassName = classPrefix + colorId; //make the css class name
