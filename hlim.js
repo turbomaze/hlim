@@ -7,6 +7,7 @@
 
 /**********
  * config */
+var colorText = false; //whether or not to blend text with the background
 var classPrefix = 'hlim-color-';
 var defaultWidth = 30;
 var defaultNumColors = -1;
@@ -54,6 +55,7 @@ function turnHlimElementsIntoImages(cssRules) {
 		var maxColors = text.getAttribute('data-hlim-max-colors') || defaultNumColors;
 		var saveFilePrompt = text.getAttribute('data-hlim-save') == '';
 		text.style.fontFamily = 'monospace';
+		text.style.whiteSpace = 'pre';
 
 		//posterizes the image if the user wants to limit the number of colors in the image
 		var imageModifier = (maxColors < 0) ? null : (function(maxColors_) {
@@ -99,11 +101,12 @@ function turnHlimElementsIntoImages(cssRules) {
 
 function generateCSSForColors(callback) {
 	var css = document.createElement('style');
+	css.innerHTML = css.innerHTML + '.hlim-line{display: block;}'; //make spans act like divs
 	for (var ai = 0; ai < uniqueColors.length; ai++) {
 		var color = uniqueColors[ai];
 		var rule = '.'+classPrefix+ai+'::selection {' + 
 			'background: '+color+';' + 
-			//'color: '+color+';' + 
+			((colorText) ? 'color: '+color+';' : '') + 
 		'}';
 		css.innerHTML = css.innerHTML + rule;
 
@@ -167,6 +170,8 @@ function textToHighlightImage(pixels, str, width) {
 			continue; //because then it shouldn't be counted
 		}
 
+		if (col == 0) ret += '<span class="hlim-line">';
+
 		if (!finishedDrawing) { //if you haven't drawn all the pixels yet
 			var baseIdx = 4*(width*row + col); //get the current character's color
 			var red = pixels[baseIdx+0]; //" "
@@ -188,10 +193,11 @@ function textToHighlightImage(pixels, str, width) {
 		col = col%width; //loop around
 
 		if (col == 0) { //if it just got rolled back to 0, it means it's a new line
-			ret += "<br />"; //so go to a new line
+			ret += '</span>';//"<br />"; //so go to a new line
 			row += 1; //and increment the row counter
 		}
 	}
+	if (col != 0) ret += '</span>'; //end the current line if it didn't end already
 
 	return ret; //return the final lump of hlim html goodness
 }
