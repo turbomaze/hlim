@@ -2,6 +2,7 @@
 | HLIM            |
 |                 |
 | @author Anthony |
+| @version 1.0    |
 \*****************/
 
 /**********
@@ -61,7 +62,7 @@ function turnHlimElementsIntoImages(cssRules) {
 			};
 		})(maxColors);
 
-		
+
 		getPixelsFromImage(textImgSrc, charsPerLine, (function(text_, charsPerLine_, saveFilePrompt_, cssRules_) {
 			return function(data, timeTakenToLoadImage) {
 				var htmlStartingTime = new Date().getTime();
