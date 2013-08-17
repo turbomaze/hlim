@@ -21,16 +21,23 @@ Hlim (HighLight IMage) is a bit of javascript that enables you to hide images in
 
 4. When the images are finished loading (which might take a while...), the HTML is generated, and once that's done everything should be ready. Highlight and enjoy!
 
-5. If you want to save the generated html/css, simply add a data-hlim-save attribute.
+5. Images taking too long to generate? Try reducing the number of colors. Simple add a `data-hlim-max-colors` attribute for massive speed boosts.
 ```
-<p data-hlim-src="cat.png" data-hlim-width="80" data-hlim-save>
+<p data-hlim-src="cat.png" data-hlim-width="80" data-hlim-max-colors="2000">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue.
+</p>
+```
+
+6. If you want to save the generated html/css, simply add a data-hlim-save attribute.
+```
+<p data-hlim-src="cat.png" data-hlim-width="80" data-hlim-max-colors="2000" data-hlim-save>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue.
 </p>
 ```
 
 ## How It Works
 
-1. For every hlim element, create an invisible canvas and draw the corresponding image to it. The width of the image should be set to the desired number of characters per line in the text-representation of the image. Store the image's pixels.
+1. For every hlim element, create an invisible canvas and draw the corresponding image to it. If the user wants to limit the number of colors used, then posterize the canvas before moving on. The width of the image should be set to the desired number of characters per line in the text-representation of the image. Store the image's pixels.
 
 2. Go through all the pixels in all the images and create an array of unique colors.
 
