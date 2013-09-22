@@ -5,7 +5,7 @@ Hlim (HighLight IMage) is a bit of javascript that enables you to hide images in
 ## Using Hlim
 
 1. Include the javascript file in your project.
-2. Add a `data-hlim-src` attribute to the html tag you wish to hlim-ify. Set it equal to the location of the image you wish to hide in the background (NOTE: the image must be hosted on the web server as the javascript/html to avoid CORS issues). For example: 
+2. Add a `data-hlim-src` attribute to the html tag you wish to hlim-ify. Set it equal to the location of the image you wish to hide in the background (NOTE: the image must be hosted on the same web server as the javascript/html to avoid CORS issues). For example: 
 ```
 <p data-hlim-src="cat.png">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue.
